@@ -29,6 +29,9 @@ class User implements \Symfony\Component\Security\Core\User\PasswordAuthenticate
     #[ORM\Column(length: 255)]
     private ?string $lastname = null;
 
+    #[ORM\OneToOne(targetEntity: ShoppingCart::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?ShoppingCart $cart = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -93,4 +96,14 @@ class User implements \Symfony\Component\Security\Core\User\PasswordAuthenticate
 
         return $this;
     }
+
+    public function getCart(): ?ShoppingCart {
+        return $this->cart;
+    }
+
+    public function setCart(?ShoppingCart $cart): self {
+        $this->cart = $cart;
+        return $this;
+    }
+
 }
