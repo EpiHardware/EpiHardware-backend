@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,6 +13,45 @@ use App\Entity\Product;
 
 class ProductController extends AbstractController
 {
+
+
+    #[Route('/api/products', methods: ['GET'])]
+    public function listProducts(ProductRepository $productRepository): JsonResponse
+    {
+        $products = $productRepository->findAll();
+        $data = array_map(function ($product) {
+            return [
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+                'description' => $product->getDescription(),
+                'price' => $product->getPrice(),
+                'photo' => $product->getPhoto()
+            ];
+        }, $products);
+
+        return new JsonResponse($data);
+    }
+
+    #[Route('/api/products/{productId}', methods: ['GET'])]
+    public function productDetail(ProductRepository $productRepository, int $productId): JsonResponse
+    {
+        $product = $productRepository->find($productId);
+        if (!$product) {
+            return new JsonResponse(['error' => 'Product not found'], 404);
+        }
+
+        $data = [
+            'id' => $product->getId(),
+            'name' => $product->getName(),
+            'description' => $product->getDescription(),
+            'price' => $product->getPrice(),
+            'photo' => $product->getPhoto()
+        ];
+
+        return new JsonResponse($data);
+    }
+
+
     #[Route('/api/products', methods: ['POST'])]
     public function addProduct(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -20,30 +60,44 @@ class ProductController extends AbstractController
         $product = new Product();
         $product->setName($data['name']);
         $product->setDescription($data['description']);
-        $product->setPhoto($data['photo']);
         $product->setPrice($data['price']);
+        $product->setPhoto($data['photo']);
 
         $entityManager->persist($product);
         $entityManager->flush();
 
-        return new JsonResponse(['status' => 'Product added'], Response::HTTP_CREATED);
+        return new JsonResponse(['status' => 'Product created', 'id' => $product->getId()], Response::HTTP_CREATED);
     }
 
-    #[Route('/api/products', methods: ['GET'])]
-    public function getProducts(EntityManagerInterface $entityManager): JsonResponse
+
+    #[Route('/api/products/{productId}', methods: ['PUT', 'DELETE'])]
+    public function modifyDeleteProduct(Request $request, ProductRepository $productRepository, EntityManagerInterface $entityManager, int $productId): JsonResponse
     {
-        $productRepository = $entityManager->getRepository(Product::class);
-        $products = $productRepository->findAll();
+        $product = $productRepository->find($productId);
+        if (!$product) {
+            return new JsonResponse(['error' => 'Product not found'], 404);
+        }
 
-        $data = array_map(function ($product) {
-            return [
-                'name' => $product->getName(),
-                'description' => $product->getDescription(),
-                'photo' => $product->getPhoto(),
-                'price' => $product->getPrice(),
-            ];
-        }, $products);
+        if ($request->getMethod() === 'PUT') {
+            $data = json_decode($request->getContent(), true);
+            $product->setName($data['name']);
+            $product->setDescription($data['description']);
+            $product->setPrice($data['price']);
+            $product->setPhoto($data['photo']);
 
-        return new JsonResponse($data, Response::HTTP_OK);
+            $entityManager->flush();
+
+            return new JsonResponse(['status' => 'Product updated'], Response::HTTP_OK);
+        } elseif ($request->getMethod() === 'DELETE') {
+            $entityManager->remove($product);
+            $entityManager->flush();
+
+            return new JsonResponse(['status' => 'Product deleted'], Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(['error' => 'Method not supported'], Response::HTTP_BAD_REQUEST);
     }
+
+
+
 }
