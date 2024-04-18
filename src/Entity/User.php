@@ -2,95 +2,105 @@
 
 namespace App\Entity;
 
+use AllowDynamicProperties;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
 
-#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[AllowDynamicProperties] #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User implements \Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface
-{
+#[ORM\UniqueConstraint(name: "email_unique", columns: ["email"])]
+class User implements UserInterface, \Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface{
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $login = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $password = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $email = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $firstname = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $lastname = null;
 
-    public function getId(): ?int
-    {
+    public function getId(): ?int {
         return $this->id;
     }
 
-    public function getLogin(): ?string
-    {
+    public function getLogin(): ?string {
         return $this->login;
     }
 
-    public function setLogin(string $login): static
-    {
-        $this->login = $login;
-
-        return $this;
-    }
-
-    public function getPassword(): ?string
-    {
+    public function getPassword(): ?string {
         return $this->password;
     }
 
-    public function setPassword(string $password): static
-    {
+    public function setPassword(string $password): self {
         $this->password = $password;
-
         return $this;
     }
 
-    public function getEmail(): ?string
-    {
+    public function getEmail(): ?string {
         return $this->email;
     }
 
-    public function setEmail(string $email): static
-    {
+    public function setEmail(string $email): self {
         $this->email = $email;
-
         return $this;
     }
 
-    public function getFirstname(): ?string
-    {
+    public function setLogin(string $login): self {
+        $this->login = $login;
+        return $this;
+    }
+
+    public function getFirstname(): ?string {
         return $this->firstname;
     }
 
-    public function setFirstname(string $firstname): static
-    {
+    public function setFirstname(string $firstname): self {
         $this->firstname = $firstname;
-
         return $this;
     }
 
-    public function getLastname(): ?string
-    {
+    public function getLastname(): ?string {
         return $this->lastname;
     }
 
-    public function setLastname(string $lastname): static
-    {
+    public function setLastname(string $lastname): self {
         $this->lastname = $lastname;
-
         return $this;
+    }
+
+    public function getRoles(): array {
+        return ['ROLE_USER']; // Adjust accordingly based on your application's roles logic
+    }
+
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+         $this->plainPassword = null;
+    }
+
+    public function getUserIdentifier(): string {
+        return $this->email; // This typically returns a unique identifier, often the email
+    }
+
+    public function getUsername(): string {
+        // Deprecated in Symfony 5.3+, use getUserIdentifier instead
+        return $this->getUserIdentifier();
+    }
+
+    public function getSalt(): ?string {
+        // Not needed when using the "bcrypt" algorithm in password_hash
+        return null;
     }
 }

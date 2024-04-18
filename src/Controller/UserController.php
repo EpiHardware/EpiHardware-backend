@@ -17,6 +17,11 @@ class UserController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
+        $existingUser = $entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        if ($existingUser) {
+            return new JsonResponse(['message' => 'Email already in use'], Response::HTTP_CONFLICT);
+        }
+
         $user = new User();
         $user->setLogin($data['login']);
         $user->setEmail($data['email']);
@@ -30,4 +35,5 @@ class UserController extends AbstractController
 
         return new JsonResponse(['status' => 'User created'], Response::HTTP_CREATED);
     }
+
 }
