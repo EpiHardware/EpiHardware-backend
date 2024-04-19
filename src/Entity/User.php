@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use AllowDynamicProperties;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -30,6 +32,8 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
 
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $lastname = null;
+    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'user')]
+    private Collection $orders;
 
     public function getId(): ?int {
         return $this->id;
@@ -102,5 +106,15 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
     public function getSalt(): ?string {
         // Not needed when using the "bcrypt" algorithm in password_hash
         return null;
+    }
+
+    public function __construct()
+    {
+        $this->orders = new ArrayCollection();
+    }
+
+    public function getOrders(): Collection
+    {
+        return $this->orders;
     }
 }
