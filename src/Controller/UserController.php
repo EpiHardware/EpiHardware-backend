@@ -36,4 +36,56 @@ class UserController extends AbstractController
         return new JsonResponse(['status' => 'User created'], Response::HTTP_CREATED);
     }
 
+    #[Route('/api/users', methods: ['GET'])]
+    public function getCurrentUser(): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $userData = [
+            'login' => $user->getLogin(),
+            'email' => $user->getEmail(),
+            'firstname' => $user->getFirstname(),
+            'lastname' => $user->getLastname(),
+        ];
+
+        return new JsonResponse($userData, Response::HTTP_OK);
+    }
+
+    #[Route('/api/users', methods: ['PATCH'])]
+    public function updateCurrentUser(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordEncoder): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['login'])) {
+            $user->setLogin($data['login']);
+        }
+        if (isset($data['email'])) {
+            $user->setEmail($data['email']);
+        }
+        if (isset($data['firstname'])) {
+            $user->setFirstname($data['firstname']);
+        }
+        if (isset($data['lastname'])) {
+            $user->setLastname($data['lastname']);
+        }
+        if (isset($data['password'])) {
+            $password = $passwordEncoder->hashPassword($user, $data['password']);
+            $user->setPassword($password);
+        }
+
+        $entityManager->flush();
+
+        return new JsonResponse(['message' => 'User updated'], Response::HTTP_OK);
+    }
+
+
+
 }
