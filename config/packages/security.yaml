@@ -38,6 +38,8 @@ security:
             - { path: ^/api/orders, roles: IS_AUTHENTICATED_FULLY }
             - { path: ^/api/logout, roles: IS_AUTHENTICATED_FULLY }
             - { path: ^/api/products, roles: IS_AUTHENTICATED_FULLY }
+            - { path: ^/api/carts, roles: IS_AUTHENTICATED_FULLY }
+            - { path: ^/api/carts/validate, roles: IS_AUTHENTICATED_FULLY }
 
 
 when@test:

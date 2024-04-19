@@ -12,9 +12,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[AllowDynamicProperties] #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: "email_unique", columns: ["email"])]
-class User implements UserInterface, \Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface{
+class User implements UserInterface{
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "SEQUENCE")]
+    #[ORM\SequenceGenerator(sequenceName: 'entity_seq', allocationSize: 1, initialValue: 1)]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
@@ -29,6 +30,9 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
 
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $firstname = null;
+
+    #[ORM\OneToOne(targetEntity: Cart::class, inversedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?Cart $cart = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $lastname = null;
@@ -116,5 +120,14 @@ class User implements UserInterface, \Symfony\Component\Security\Core\User\Passw
     public function getOrders(): Collection
     {
         return $this->orders;
+    }
+
+    public function getCart(): ?Cart {
+        return $this->cart;
+    }
+
+    public function setCart(?Cart $cart): self {
+        $this->cart = $cart;
+        return $this;
     }
 }

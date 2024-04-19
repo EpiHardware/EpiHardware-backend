@@ -46,5 +46,39 @@ class ProductController extends AbstractController
 
         return new JsonResponse($data, Response::HTTP_OK);
     }
+
+    #[Route('/api/products/{productId}', methods: ['PUT'])]
+    public function updateProduct(Request $request, EntityManagerInterface $entityManager, int $productId): JsonResponse
+    {
+        $product = $entityManager->getRepository(Product::class)->find($productId);
+        if (!$product) {
+            return new JsonResponse(['message' => 'Product not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $product->setName($data['name'] ?? $product->getName());
+        $product->setDescription($data['description'] ?? $product->getDescription());
+        $product->setPhoto($data['photo'] ?? $product->getPhoto());
+        $product->setPrice($data['price'] ?? $product->getPrice());
+
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Product updated'], Response::HTTP_OK);
+    }
+
+    #[Route('/api/products/{productId}', methods: ['DELETE'])]
+    public function deleteProduct(EntityManagerInterface $entityManager, int $productId): JsonResponse
+    {
+        $product = $entityManager->getRepository(Product::class)->find($productId);
+        if (!$product) {
+            return new JsonResponse(['message' => 'Product not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $entityManager->remove($product);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Product deleted'], Response::HTTP_OK);
+    }
+
 }
 
