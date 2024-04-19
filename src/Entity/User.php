@@ -3,15 +3,18 @@
 namespace App\Entity;
 
 use AllowDynamicProperties;
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+
 #[AllowDynamicProperties] #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: "email_unique", columns: ["email"])]
+#[ApiResource]
 class User implements UserInterface{
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "SEQUENCE")]
