@@ -16,9 +16,13 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class CartController extends AbstractController
 {
-    #[Route('/api/carts/{productId}', methods: ['POST'])]
+    #[Route('/api/carts/{productId}', name: 'add_product_to_cart', requirements: ['productId' => '\d+'], methods: ['POST'])]
     public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security): JsonResponse
     {
+        if (!is_int($productId)) {
+            throw new \InvalidArgumentException("Product ID must be an integer.");
+        }
+
         $product = $entityManager->getRepository(Product::class)->find($productId);
         if (!$product) {
             return new JsonResponse(['message' => 'Product not found'], Response::HTTP_NOT_FOUND);
@@ -98,42 +102,41 @@ class CartController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK);
     }
 
-    #[Route('/api/carts/validate', methods: ['POST'])]
-    public function validateCart(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    #[Route('/api/carts/validate', name: 'cart_validate', methods: ['POST'])]
+    public function validateCart(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        $user = $security->getUser();
-        if (!$user) {
-            throw new AccessDeniedException('This user does not have access to this resource.');
-        }
+        $user = $this->getUser();
+        $cart = $user->getCart();
 
-        $cart = $entityManager->getRepository(Cart::class)->findOneBy(['user' => $user]);
         if (!$cart) {
-            return new JsonResponse(['message' => 'No cart found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'No cart found'], 404);
         }
 
         $order = new Order();
         $order->setUser($user);
         $order->setCreationDate(new \DateTime());
-        $totalPrice = 0.0;
 
+        $totalPrice = 0;
         foreach ($cart->getProducts() as $product) {
-            $productQuantity = $cart->getQuantityForProduct($product);
-            $productTotalPrice = $product->getPrice() * $productQuantity;
-            $totalPrice += $productTotalPrice;
-
             $order->addProduct($product);
+            $totalPrice += $product->getPrice();
         }
-
         $order->setTotalPrice($totalPrice);
+
         $entityManager->persist($order);
-
-        foreach ($cart->getProducts() as $product) {
-            $cart->removeProduct($product);
-
-        }
         $entityManager->flush();
 
-        return new JsonResponse(['status' => 'Cart validated, order created', 'orderId' => $order->getId()], Response::HTTP_OK);
+        // Optionally clear the cart
+        $cart->getProducts()->clear();
+        $entityManager->persist($cart);
+        $entityManager->flush();
+
+        return $this->json([
+            'message' => 'Cart validated and order created successfully',
+            'order_id' => $order->getId(),
+            'total_price' => $totalPrice,
+            'products' => $order->getProducts()->toArray()
+        ]);
     }
 
 }
