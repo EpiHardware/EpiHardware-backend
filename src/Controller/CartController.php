@@ -6,6 +6,7 @@ use App\Entity\Cart;
 use App\Entity\Order;
 use App\Entity\Product;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +17,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class CartController extends AbstractController
 {
-    #[Route('/api/carts/{productId}', name: 'add_product_to_cart', requirements: ['productId' => '\d+'], methods: ['POST'])]
+    #[Route('/api/carts/{productId}', name: 'add_product_to_cart', requirements: ['productId' => '\d+'], methods: ['POST']),]
     public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security): JsonResponse
     {
         if (!is_int($productId)) {
@@ -77,30 +78,41 @@ class CartController extends AbstractController
     }
 
     #[Route('/api/carts', methods: ['GET'])]
-    public function getCartProducts(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    public function getCartProducts(EntityManagerInterface $entityManager, Security $security, LoggerInterface $logger): JsonResponse
     {
         $user = $security->getUser();
         if (!$user) {
+            $logger->warning("Access denied: No user session found.");
             throw new AccessDeniedException('This user does not have access to this resource.');
         }
 
-        $cart = $entityManager->getRepository(Cart::class)->findOneBy(['user' => $user]);
-        if (!$cart) {
-            return new JsonResponse(['message' => 'No cart found'], Response::HTTP_NOT_FOUND);
+        try {
+            $logger->info("Fetching cart for user: {$user->getId()}");
+            $cart = $entityManager->getRepository(Cart::class)->findOneBy(['user' => $user]);
+
+            if (!$cart) {
+                $logger->warning("No cart found for user: {$user->getId()}");
+                return new JsonResponse(['message' => 'No cart found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $logger->info("Cart found with ID: {$cart->getId()}, fetching products...");
+            $products = $cart->getProducts();
+            $data = $products->map(function (Product $product) use ($cart) {
+                return [
+                    'product_id' => $product->getId(),
+                    'name' => $product->getName(),
+                    'quantity' => $cart->getQuantityForProduct($product),
+                    'price' => $product->getPrice(),
+                ];
+            })->toArray();
+
+            return new JsonResponse($data, Response::HTTP_OK);
+        } catch (\Doctrine\ORM\NonUniqueResultException $e) {
+            $logger->error('Multiple carts found for a single user', ['userId' => $user->getId()]);
+            return new JsonResponse(['error' => 'Multiple carts found, data inconsistency.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $products = $cart->getProducts();
-        $data = $products->map(function (Product $product) use ($cart) {
-            return [
-                'product_id' => $product->getId(),
-                'name' => $product->getName(),
-                'quantity' => $cart->getQuantityForProduct($product),
-                'price' => $product->getPrice(),
-            ];
-        })->toArray();
-
-        return new JsonResponse($data, Response::HTTP_OK);
     }
+
 
     #[Route('/api/carts/validate', name: 'cart_validate', methods: ['POST'])]
     public function validateCart(Request $request, EntityManagerInterface $entityManager): JsonResponse
