@@ -6,20 +6,26 @@ namespace App\DataFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use App\Entity\Product;
+use Faker\Factory;
 
 class ProductFixtures extends Fixture
 {
     public function load(ObjectManager $manager): void
     {
-        $product = new Product();
-        $product->setName('UltraHD Monitor');
-        $product->setDescription('A 32-inch UltraHD monitor, perfect for both gaming and professional use.');
-        $product->setPhoto('https://example.com/ultrahd-monitor.jpg');
-        $product->setPrice('110.99');
+        $faker = Factory::create();
 
-        $manager->persist($product);
+        // Create multiple products
+        for ($i = 0; $i < 50; $i++) {
+            $product = new Product();
+            $product->setName($faker->word . ' Monitor');
+            $product->setDescription($faker->sentence(10));
+            $product->setPhoto($faker->imageUrl(640, 480, 'electronics'));
+            $product->setPrice($faker->randomFloat(2, 50, 999.99));
 
-        // You can create more products here
+            $manager->persist($product);
+        }
+
         $manager->flush();
     }
 }
+

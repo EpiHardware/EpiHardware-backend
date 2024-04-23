@@ -1,30 +1,34 @@
 <?php
-
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ProductRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ApiResource]
 class Product
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\GeneratedValue(strategy: "SEQUENCE")]
+    #[ORM\SequenceGenerator(sequenceName: 'entity_seq', allocationSize: 1, initialValue: 1)]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: 'text')]
     private ?string $description = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private ?string $photo = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
-    private ?string $price = null;
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    private ?float $price = null;
+
+    #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'products')]
+    private ?Order $order = null;
 
     public function getId(): ?int
     {
@@ -36,10 +40,9 @@ class Product
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -48,10 +51,9 @@ class Product
         return $this->description;
     }
 
-    public function setDescription(string $description): static
+    public function setDescription(string $description): self
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -60,22 +62,31 @@ class Product
         return $this->photo;
     }
 
-    public function setPhoto(string $photo): static
+    public function setPhoto(string $photo): self
     {
         $this->photo = $photo;
-
         return $this;
     }
 
-    public function getPrice(): ?string
+    public function getPrice(): ?float
     {
         return $this->price;
     }
 
-    public function setPrice(string $price): static
+    public function setPrice(float $price): self
     {
         $this->price = $price;
+        return $this;
+    }
 
+    public function getOrder(): ?Order
+    {
+        return $this->order;
+    }
+
+    public function setOrder(?Order $order): self
+    {
+        $this->order = $order;
         return $this;
     }
 }
