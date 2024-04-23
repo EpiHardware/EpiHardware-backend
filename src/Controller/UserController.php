@@ -33,7 +33,9 @@ class UserController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
 
-        return new JsonResponse(['status' => 'User created'], Response::HTTP_CREATED);
+        $response = new JsonResponse(['status' => 'User created'], Response::HTTP_CREATED);
+        $response->headers->set("Access-Control-Allow-Origin", "*");
+        return $response;
     }
 
     #[Route('/api/users', methods: ['GET'])]
