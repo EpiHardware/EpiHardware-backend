@@ -47,6 +47,54 @@ class ProductController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK);
     }
 
+    #[Route('/api/products/search', methods: ['GET'])]
+    public function searchProducts(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $productName = $request->query->get('name');
+
+        // Vérifiez si $productName est null, si c'est le cas, retournez une réponse appropriée
+        if ($productName === null) {
+            return new JsonResponse(['message' => 'Product name is missing'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $productRepository = $entityManager->getRepository(Product::class);
+
+        // Utilisez une méthode de recherche appropriée dans votre repository, par exemple, findBySearchTerm
+        $products = $productRepository->findBySearchTerm($productName);
+
+        $data = array_map(function ($product) {
+            return [
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+                'description' => $product->getDescription(),
+                'photo' => $product->getPhoto(),
+                'price' => $product->getPrice(),
+            ];
+        }, $products);
+
+        return new JsonResponse($data, Response::HTTP_OK);
+    }
+
+    #[Route('/api/products/{productId}', methods: ['GET'])]
+    public function getProduct(int $productId, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $product = $entityManager->getRepository(Product::class)->find($productId);
+
+        if (!$product) {
+            return new JsonResponse(['message' => 'Product not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = [
+            'id' => $product->getId(),
+            'name' => $product->getName(),
+            'description' => $product->getDescription(),
+            'photo' => $product->getPhoto(),
+            'price' => $product->getPrice(),
+        ];
+
+        return new JsonResponse($data, Response::HTTP_OK);
+    }
+
     #[Route('/api/products/{productId}', methods: ['PUT'])]
     public function updateProduct(Request $request, EntityManagerInterface $entityManager, int $productId): JsonResponse
     {

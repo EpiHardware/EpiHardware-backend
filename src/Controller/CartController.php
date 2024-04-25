@@ -103,6 +103,7 @@ class CartController extends AbstractController
                     'name' => $product->getName(),
                     'quantity' => $cart->getQuantityForProduct($product),
                     'price' => $product->getPrice(),
+                    'photo' => $product->getPhoto()
                 ];
             })->toArray();
 
