@@ -18,8 +18,11 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 class CartController extends AbstractController
 {
     #[Route('/api/carts/{productId}', name: 'add_product_to_cart', requirements: ['productId' => '\d+'], methods: ['POST']),]
-    public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security): JsonResponse
+    public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security, Request $request): JsonResponse
     {
+        $data = json_decode($request->getContent(), true);
+        $quantity = $data['quantity'] ?? 1;
+
         if (!is_int($productId)) {
             throw new \InvalidArgumentException("Product ID must be an integer.");
         }

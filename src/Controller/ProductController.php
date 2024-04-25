@@ -22,6 +22,8 @@ class ProductController extends AbstractController
         $product->setDescription($data['description']);
         $product->setPhoto($data['photo']);
         $product->setPrice($data['price']);
+        $product->setQuantity($data['quantity']);
+
 
         $entityManager->persist($product);
         $entityManager->flush();
@@ -37,6 +39,7 @@ class ProductController extends AbstractController
 
         $data = array_map(function ($product) {
             return [
+                'id' => $product->getId(),
                 'name' => $product->getName(),
                 'description' => $product->getDescription(),
                 'photo' => $product->getPhoto(),
@@ -69,6 +72,7 @@ class ProductController extends AbstractController
                 'description' => $product->getDescription(),
                 'photo' => $product->getPhoto(),
                 'price' => $product->getPrice(),
+                'quantity' => $product->getQuantity(),
             ];
         }, $products);
 
@@ -90,6 +94,7 @@ class ProductController extends AbstractController
             'description' => $product->getDescription(),
             'photo' => $product->getPhoto(),
             'price' => $product->getPrice(),
+            'quantity' => $product->getQuantity(),
         ];
 
         return new JsonResponse($data, Response::HTTP_OK);
@@ -108,6 +113,7 @@ class ProductController extends AbstractController
         $product->setDescription($data['description'] ?? $product->getDescription());
         $product->setPhoto($data['photo'] ?? $product->getPhoto());
         $product->setPrice($data['price'] ?? $product->getPrice());
+        $product->setQuantity($data['quantity'] ?? $product->getQuantity());
 
         $entityManager->flush();
 
