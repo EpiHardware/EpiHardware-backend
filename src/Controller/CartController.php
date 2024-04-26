@@ -147,11 +147,26 @@ class CartController extends AbstractController
         $entityManager->persist($cart);
         $entityManager->flush();
 
+        // Prepare data for JSON response
+        $orderData = [
+            'id' => $order->getId(),
+            'creation_date' => $order->getCreationDate()->format('Y-m-d H:i:s'),
+            'total_price' => $order->getTotalPrice(),
+            // Exclude direct serialization of products to avoid circular reference
+            'products' => array_map(function($product) {
+                return [
+                    'id' => $product->getId(),
+                    'name' => $product->getName(),
+                    'price' => $product->getPrice(),
+                    'description' => $product->getDescription(),
+                    'photo' => $product->getPhoto(),
+                ];
+            }, $order->getProducts()->toArray())
+        ];
+
         return $this->json([
             'message' => 'Cart validated and order created successfully',
-            'order_id' => $order->getId(),
-            'total_price' => $totalPrice,
-            'products' => $order->getProducts()->toArray()
+            'order' => $orderData
         ]);
     }
 
