@@ -53,6 +53,9 @@ class OrderController extends AbstractController
             $productsArray[] = [
                 'id' => $product->getId(),
                 'name' => $product->getName(),
+                'description' => $product->getDescription(),
+                'photo' => $product->getPhoto(),
+                'price' => $product->getPrice(),
             ];
         }
 
