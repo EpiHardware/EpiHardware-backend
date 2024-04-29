@@ -6,7 +6,6 @@ use App\Repository\ProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
-#[ApiResource]
 class Product
 {
     #[ORM\Id]
@@ -29,6 +28,9 @@ class Product
 
     #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'products')]
     private ?Order $order = null;
+
+    #[ORM\Column(type: 'integer')]
+    private ?int $quantity = null;
 
     public function getId(): ?int
     {
@@ -87,6 +89,17 @@ class Product
     public function setOrder(?Order $order): self
     {
         $this->order = $order;
+        return $this;
+    }
+
+    public function getQuantity(): ?int
+    {
+        return $this->quantity;
+    }
+
+    public function setQuantity(int $quantity): self
+    {
+        $this->quantity = $quantity;
         return $this;
     }
 }

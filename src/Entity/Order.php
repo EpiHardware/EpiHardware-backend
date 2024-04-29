@@ -10,7 +10,6 @@ use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: "`order`")]
-#[ApiResource]
 
 class Order
 {
