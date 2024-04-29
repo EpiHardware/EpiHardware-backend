@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Order;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -78,6 +79,27 @@ class ProductController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse(['status' => 'Product deleted'], Response::HTTP_OK);
+    }
+
+    #[Route('/api/orders/{orderId}/products', methods: ['POST'])]
+    public function addProductToOrder(Request $request, EntityManagerInterface $entityManager, int $orderId): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $order = $entityManager->getRepository(Order::class)->find($orderId);
+        if (!$order) {
+            return new JsonResponse(['message' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $product = $entityManager->getRepository(Product::class)->find($data['productId']);
+        if (!$product) {
+            return new JsonResponse(['message' => 'Product not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $order->addProduct($product);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Product added to order'], Response::HTTP_CREATED);
     }
 
 }
