@@ -26,12 +26,17 @@ class Order
     #[ORM\Column(type: 'datetime')]
     private ?\DateTimeInterface $creationDate = null;
 
-    #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'order')]
-    private Collection $products;
-
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
+
+    #[ORM\ManyToMany(targetEntity: Product::class)]
+    #[ORM\JoinTable(
+        name: "order_product",
+        joinColumns: [new ORM\JoinColumn(name: "order_id", referencedColumnName: "id")],
+        inverseJoinColumns: [new ORM\JoinColumn(name: "product_id", referencedColumnName: "id")]
+    )]
+    private Collection $products;
 
     public function __construct()
     {
@@ -74,18 +79,13 @@ class Order
     {
         if (!$this->products->contains($product)) {
             $this->products[] = $product;
-            $product->setOrder($this);
         }
         return $this;
     }
 
     public function removeProduct(Product $product): self
     {
-        if ($this->products->removeElement($product)) {
-            if ($product->getOrder() === $this) {
-                $product->setOrder(null);
-            }
-        }
+        $this->products->removeElement($product);
         return $this;
     }
 
