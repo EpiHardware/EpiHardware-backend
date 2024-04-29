@@ -18,8 +18,11 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 class CartController extends AbstractController
 {
     #[Route('/api/carts/{productId}', name: 'add_product_to_cart', requirements: ['productId' => '\d+'], methods: ['POST']),]
-    public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security): JsonResponse
+    public function addProductToCart(int $productId, EntityManagerInterface $entityManager, Security $security, Request $request): JsonResponse
     {
+        $data = json_decode($request->getContent(), true);
+        $quantity = $data['quantity'] ?? 1;
+
         if (!is_int($productId)) {
             throw new \InvalidArgumentException("Product ID must be an integer.");
         }
@@ -103,6 +106,7 @@ class CartController extends AbstractController
                     'name' => $product->getName(),
                     'quantity' => $cart->getQuantityForProduct($product),
                     'price' => $product->getPrice(),
+                    'photo' => $product->getPhoto()
                 ];
             })->toArray();
 
@@ -143,11 +147,26 @@ class CartController extends AbstractController
         $entityManager->persist($cart);
         $entityManager->flush();
 
+        // Prepare data for JSON response
+        $orderData = [
+            'id' => $order->getId(),
+            'creation_date' => $order->getCreationDate()->format('Y-m-d H:i:s'),
+            'total_price' => $order->getTotalPrice(),
+            // Exclude direct serialization of products to avoid circular reference
+            'products' => array_map(function($product) {
+                return [
+                    'id' => $product->getId(),
+                    'name' => $product->getName(),
+                    'price' => $product->getPrice(),
+                    'description' => $product->getDescription(),
+                    'photo' => $product->getPhoto(),
+                ];
+            }, $order->getProducts()->toArray())
+        ];
+
         return $this->json([
             'message' => 'Cart validated and order created successfully',
-            'order_id' => $order->getId(),
-            'total_price' => $totalPrice,
-            'products' => $order->getProducts()->toArray()
+            'order' => $orderData
         ]);
     }
 
