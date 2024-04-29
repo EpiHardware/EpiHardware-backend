@@ -11,7 +11,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: CartRepository::class)]
 #[ORM\Table(name: "carts")]
-#[ApiResource]
 class Cart
 {
     #[ORM\Id]

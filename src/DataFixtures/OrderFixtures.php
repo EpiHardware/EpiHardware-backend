@@ -33,6 +33,7 @@ class OrderFixtures extends Fixture implements DependentFixtureInterface
                     $product->setDescription($faker->sentence);
                     $product->setPhoto($faker->imageUrl(640, 480, 'technics'));
                     $product->setPrice($faker->randomFloat(2, 1, 200));
+                    $product->setQuantity($faker->numberBetween(1, 100));
                     $product->setOrder($order);
                     $manager->persist($product);
                 }
