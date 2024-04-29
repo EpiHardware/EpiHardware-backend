@@ -44,6 +44,25 @@ class OrderController extends AbstractController
             return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
-        return $this->json($order);
+        // Get the products for the order
+        $products = $order->getProducts();
+
+        // Convert the products to an array
+        $productsArray = [];
+        foreach ($products as $product) {
+            $productsArray[] = [
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+            ];
+        }
+
+        // Add the products to the order data
+        $orderData = [
+            'id' => $order->getId(),
+            'totalPrice' => $order->getTotalPrice(),
+            'products' => $productsArray,
+        ];
+
+        return $this->json($orderData);
     }
 }
