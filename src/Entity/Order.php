@@ -7,6 +7,7 @@ use App\Repository\OrderRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: "`order`")]
@@ -17,15 +18,19 @@ class Order
     #[ORM\GeneratedValue(strategy: "SEQUENCE")]
     #[ORM\SequenceGenerator(sequenceName: 'entity_seq', allocationSize: 1, initialValue: 1)]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['order:read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Groups(['order:read'])]
     private ?float $totalPrice = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['order:read'])]
     private ?\DateTimeInterface $creationDate = null;
 
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'order')]
+    #[Groups(['order:read'])]
     private Collection $products;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'orders')]
