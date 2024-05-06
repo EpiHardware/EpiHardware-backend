@@ -36,9 +36,6 @@ CMD tail -f /dev/null
 
 WORKDIR /var/www/html/
 RUN composer install
-RUN composer update
-
-
 
 
 CMD symfony server:start
