@@ -3,47 +3,70 @@
 namespace App\Controller;
 
 use App\Entity\Order;
-use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 #[Route('/api/orders')]
 class OrderController extends AbstractController
 {
-    #[Route('/', name: 'api_orders', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    public function index(EntityManagerInterface $entityManager): Response {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'User not authenticated'], Response::HTTP_FORBIDDEN);
-        }
+    private Security $security;
+    private SerializerInterface $serializer;
+    private EntityManagerInterface $entityManager;
 
-        $orders = $entityManager->getRepository(Order::class)->findBy(['user' => $user]);
-
-        return $this->json($orders);
+    public function __construct(Security $security, SerializerInterface $serializer, EntityManagerInterface $entityManager)
+    {
+        $this->security = $security;
+        $this->serializer = $serializer;
+        $this->entityManager = $entityManager;
     }
 
-    #[Route('/{orderId}', name: 'api_order_detail', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    public function show(int $orderId, EntityManagerInterface $entityManager): Response {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'User not authenticated'], Response::HTTP_FORBIDDEN);
+    // Fetch all orders for the authenticated user with details
+    #[Route('/', name: 'get_orders', methods: ['GET'])]
+    public function getOrders(): JsonResponse
+    {
+        $user = $this->security->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $order = $entityManager->getRepository(Order::class)->find($orderId);
+        $orders = $this->entityManager->getRepository(Order::class)->findBy(['user' => $user]);
+        $data = $this->serializer->serialize($orders, 'json', [
+            'groups' => ['order:read', 'order:items'],
+            AbstractNormalizer::CIRCULAR_REFERENCE_HANDLER => function ($object) {
+                return $object->getId();
+            },
+        ]);
+
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
+    }
+
+    // Fetch a specific order by ID with details
+    #[Route('/{id}', name: 'get_order', methods: ['GET'])]
+    public function getOrder(int $id): JsonResponse
+    {
+        $user = $this->security->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $order = $this->entityManager->getRepository(Order::class)->findOneBy(['id' => $id, 'user' => $user]);
         if (!$order) {
-            return $this->json(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['message' => 'Order not found'], Response::HTTP_NOT_FOUND);
         }
 
-        if ($user !== $order->getUser()) {
-            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
-        }
+        $data = $this->serializer->serialize($order, 'json', [
+            'groups' => ['order:read', 'order:items'],
+            AbstractNormalizer::CIRCULAR_REFERENCE_HANDLER => function ($object) {
+                return $object->getId();
+            },
+        ]);
 
-        return $this->json($order);
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 }
